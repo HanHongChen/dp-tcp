@@ -1,16 +1,16 @@
 client:
-  tcp1_dial_addr: 10.0.1.1
+  tcp1_dial_addr: 192.168.58.20
   tcp1_dial_port: 31411
-  tcp1_conn_addr: 10.0.1.2
+  tcp1_conn_addr: 10.60.0.1
   tcp1_conn_port: 31412
-  tcp2_dial_addr: 10.0.2.1
+  tcp2_dial_addr: 192.168.59.20
   tcp2_dial_port: 31413
-  tcp2_conn_addr: 10.0.2.2
-  tcp2_conn_port: 31414
-
+  tcp1_conn_addr: 10.63.0.1
+  tcp1_conn_port: 31414
   tunnel_device:
     name: dpTcpTunClient
-    ip: 10.0.0.2
+    ip: 192.170.10.10
+    routePrefix: 16
 
 logger:
   level: info

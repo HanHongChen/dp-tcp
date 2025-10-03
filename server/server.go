@@ -21,6 +21,7 @@ type DpTcpServer struct {
 
 	tunnelDeviceName string
 	tunnelDeviceIP   string
+	tunnelRoutePrefix		 string
 
 	tunnelDevice *water.Interface
 
@@ -42,6 +43,8 @@ func NewDpTcpServer(config *model.ServerConfig, serverLogger *logger.ServerLogge
 
 		tunnelDeviceName: config.ServerIE.TunnelDevice.Name,
 		tunnelDeviceIP:   config.ServerIE.TunnelDevice.IP,
+		tunnelRoutePrefix:	  config.ServerIE.TunnelDevice.RoutePrefix,
+
 
 		readFromTun:  make(chan []byte),
 		readFromTcp1: make(chan []byte),
@@ -166,7 +169,7 @@ func (s *DpTcpServer) Stop() {
 func (s *DpTcpServer) setupTunnelDevice() error {
 	s.TunLog.Infof("Setting up tunnel device %s with IP %s", s.tunnelDeviceName, s.tunnelDeviceIP)
 
-	tun, err := tun.BringUpUeTunnelDevice(s.tunnelDeviceName, s.tunnelDeviceIP)
+	tun, err := tun.BringUpUeTunnelDevice(s.tunnelDeviceName, s.tunnelDeviceIP, s.tunnelRoutePrefix)
 	if err != nil {
 		return err
 	}
@@ -195,6 +198,9 @@ func (s *DpTcpServer) setupTunnelDevice() error {
 	go func() {
 		for {
 			data := <-s.writeToTun
+			if(!isValidIPPacket(data)){
+				continue
+			}
 			if _, err := s.tunnelDevice.Write(data); err != nil {
 				s.TunLog.Errorf("Error writing to tunnel device: %v", err)
 				return
@@ -206,10 +212,18 @@ func (s *DpTcpServer) setupTunnelDevice() error {
 	return nil
 }
 
+func isValidIPPacket(data []byte) bool {
+    if len(data) < 20 {
+        return false
+    }
+    version := data[0] >> 4
+    return version == 4
+}
+
 func (s *DpTcpServer) cleanUpTunnelDevice() error {
 	s.TunLog.Infof("Cleaning up tunnel device %s", s.tunnelDeviceName)
 
-	if err := tun.BringDownUeTunnelDevice(s.tunnelDeviceName); err != nil {
+	if err := tun.BringDownUeTunnelDevice(s.tunnelDeviceName, s.tunnelDeviceIP, s.tunnelRoutePrefix); err != nil {
 		return err
 	}
 
@@ -261,7 +275,6 @@ func (s *DpTcpServer) packetEliminate(ctx context.Context) {
 }
 
 func (s *DpTcpServer) packetEliminateMain(packet []byte) {
-	s.writeToTun <- packet
 	h := xxhash.Sum64(packet)
 	if _, ok := s.packetMap.Get(h); ok {
 		s.packetMap.Del(h)
@@ -269,6 +282,8 @@ func (s *DpTcpServer) packetEliminateMain(packet []byte) {
 		s.TunLog.Tracef("Eliminated packet %d, %x", h, packet)
 		return
 	}
+	s.writeToTun <- packet
+
 	s.packetMap.Set(h, struct{}{})
 	s.TunLog.Debugf("Packet %d stored", h)
 	s.TunLog.Tracef("Packet %d stored, %x", h, packet)

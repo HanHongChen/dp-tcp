@@ -1,12 +1,13 @@
 server:
-  tcp1_listen_addr: 10.0.1.1
+  tcp1_listen_addr: 192.168.58.20
   tcp1_listen_port: 31411
-  tcp2_listen_addr: 10.0.2.1
+  tcp2_listen_addr: 192.168.59.20
   tcp2_listen_port: 31413
 
   tunnel_device:
     name: dpTcpTunServer
-    ip: 10.0.0.1
+    ip: 192.170.20.10
+    routePrefix: 16
 
 logger:
   level: info
