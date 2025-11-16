@@ -1,8 +1,8 @@
 server:
   tcp1_listen_addr: 192.168.58.20
-  tcp1_listen_port: 31411
+  tcp1_listen_port: 31420
   tcp2_listen_addr: 192.168.59.20
-  tcp2_listen_port: 31413
+  tcp2_listen_port: 31422
 
   tunnel_device:
     name: dpTcpTunServer
